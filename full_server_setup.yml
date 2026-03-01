@@ -1,0 +1,52 @@
+---
+- name: Full Server Setup on GCP VM (Production Ready)
+  hosts: all
+  become: yes
+ 
+  tasks:
+ 
+    - name: Update apt packages
+      apt:
+        update_cache: yes
+ 
+    - name: Install essential packages
+      apt:
+        name:
+          - docker.io
+          - git
+          - curl
+          - unzip
+          - htop
+        state: present
+ 
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+ 
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+ 
+    - name: Install Python3 pip
+      apt:
+        name: python3-pip
+        state: present
+ 
+    - name: Install Kubernetes tools (kubectl)
+      shell: |
+        curl -LO "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"
+        install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+      args:
+        creates: /usr/local/bin/kubectl
+ 
+    - name: Verify Docker version
+      command: docker --version
+      register: docker_output
+ 
+    - name: Show Docker version
+      debug:
+        var: docker_output.stdout
